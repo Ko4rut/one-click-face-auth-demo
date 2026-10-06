@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { PasswordField } from "./PasswordField";
 
 export function RegisterForm() {
+  const router = useRouter();
   const [message, setMessage] = useState("");
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -24,9 +26,7 @@ export function RegisterForm() {
       return;
     }
 
-    setMessage(
-      "Thông tin hợp lệ. Bước tiếp theo sẽ chuyển sang page lấy khuôn mặt."
-    );
+    router.push("/face-enroll");
   };
 
   return (

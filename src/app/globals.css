@@ -2,6 +2,7 @@
 @import "../styles/tokens.css";
 @import "../features/landing/styles/landing.css";
 @import "../features/auth/styles/auth.css";
+@import "../features/face-capture/styles/face-capture.css";
 
 * {
   box-sizing: border-box;

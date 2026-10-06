@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { PasswordField } from "./PasswordField";
 
 export function LoginForm() {
+  const router = useRouter();
   const [message, setMessage] = useState("");
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -62,9 +64,7 @@ export function LoginForm() {
       <button
         className="auth-face-button"
         type="button"
-        onClick={() =>
-          setMessage("Face Login sẽ chuyển sang page lấy khuôn mặt ở bước tiếp theo.")
-        }
+        onClick={() => router.push("/face-verify")}
       >
         <span className="auth-face-icon" aria-hidden="true">
           <svg viewBox="0 0 32 32">
