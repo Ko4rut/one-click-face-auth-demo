@@ -18,10 +18,10 @@ export function SiteHeader() {
 
         <div className="site-header-actions">
           <ThemeToggle />
-          <a className="text-link" href="#experience">
+          <a className="text-link" href="/login">
             Đăng nhập
           </a>
-          <a className="button button-small button-primary" href="#flow">
+          <a className="button button-small button-primary" href="/register">
             Bắt đầu
           </a>
         </div>

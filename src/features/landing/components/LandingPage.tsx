@@ -31,7 +31,7 @@ export function LandingPage() {
           </p>
 
           <div className="hero-actions">
-            <a className="button button-primary" href="#flow">
+            <a className="button button-primary" href="/register">
               Bắt đầu trải nghiệm
               <span aria-hidden="true">↗</span>
             </a>
@@ -116,8 +116,8 @@ export function LandingPage() {
           <span className="section-kicker">NEXT STEP</span>
           <h2>Sẵn sàng nối landing page với luồng đăng ký và đăng nhập.</h2>
         </div>
-        <a className="button button-light" href="#flow">
-          Xem lại luồng
+        <a className="button button-light" href="/register">
+          Tạo tài khoản
           <span aria-hidden="true">→</span>
         </a>
       </section>
