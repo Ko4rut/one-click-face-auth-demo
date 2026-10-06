@@ -1,4 +1,5 @@
 import { FaceGateLogo } from "@/components/brand/FaceGateLogo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LANDING_NAVIGATION } from "@/constants/navigation";
 
 export function SiteHeader() {
@@ -16,6 +17,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="site-header-actions">
+          <ThemeToggle />
           <a className="text-link" href="#experience">
             Đăng nhập
           </a>

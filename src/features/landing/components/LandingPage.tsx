@@ -1,13 +1,13 @@
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { AUTH_FLOW, TECHNOLOGIES } from "@/features/landing/constants";
+import { BackgroundMotion } from "./BackgroundMotion";
 import { FaceScanVisual } from "./FaceScanVisual";
 import { FeatureGrid } from "./FeatureGrid";
 
 export function LandingPage() {
   return (
     <main className="landing-page">
-      <div className="ambient ambient-one" aria-hidden="true" />
-      <div className="ambient ambient-two" aria-hidden="true" />
+      <BackgroundMotion />
 
       <SiteHeader />
 

@@ -8,15 +8,18 @@
 
 html {
   scroll-behavior: smooth;
-  background: var(--color-ivory);
+  background: var(--color-background);
 }
 
 body {
   margin: 0;
   min-width: 320px;
-  background: var(--color-ivory);
+  background: var(--color-background);
   color: var(--color-ink);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  transition:
+    background-color 280ms ease,
+    color 280ms ease;
 }
 
 a {
@@ -41,4 +44,14 @@ button {
 :focus-visible {
   outline: 3px solid color-mix(in srgb, var(--color-sage) 75%, white);
   outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  body {
+    transition: none;
+  }
 }
