@@ -10,11 +10,52 @@ export class ApiRequestError extends Error {
   }
 }
 
+type FastApiValidationError = {
+  type?: string;
+  loc?: Array<string | number>;
+  msg?: string;
+  input?: unknown;
+};
+
 type ApiErrorPayload = {
   code?: string;
   message?: string;
-  detail?: string;
+  detail?: string | FastApiValidationError[] | Record<string, unknown>;
 };
+
+function getApiErrorMessage(error: ApiErrorPayload | null): string {
+  if (!error) {
+    return "Yêu cầu API thất bại.";
+  }
+
+  if (typeof error.message === "string" && error.message.trim()) {
+    return error.message;
+  }
+
+  if (typeof error.detail === "string" && error.detail.trim()) {
+    return error.detail;
+  }
+
+  if (Array.isArray(error.detail)) {
+    const messages = error.detail
+      .map((item) => item?.msg)
+      .filter((message): message is string => Boolean(message));
+
+    if (messages.length > 0) {
+      return messages.join(", ");
+    }
+  }
+
+  if (error.detail && typeof error.detail === "object") {
+    try {
+      return JSON.stringify(error.detail);
+    } catch {
+      return "Yêu cầu API thất bại.";
+    }
+  }
+
+  return "Yêu cầu API thất bại.";
+}
 
 async function parseResponse<TResponse>(
   response: Response
@@ -28,9 +69,7 @@ async function parseResponse<TResponse>(
     const error = payload as ApiErrorPayload | null;
 
     throw new ApiRequestError(
-      error?.message ??
-        error?.detail ??
-        "Yêu cầu API thất bại.",
+      getApiErrorMessage(error),
       response.status,
       error?.code
     );

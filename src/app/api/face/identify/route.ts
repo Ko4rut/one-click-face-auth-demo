@@ -1,25 +1,46 @@
 import { proxyAiBackend } from "@/service/ai-backend/client";
-import type { FaceIdentifyRequest } from "@/service/face-auth/types";
+import { AI_BACKEND_ENDPOINTS } from "@/service/ai-backend/endpoints";
+
+function getUploadedImage(formData: FormData): File | null {
+  const value = formData.get("image");
+  return value instanceof File ? value : null;
+}
 
 export async function POST(request: Request) {
-  const payload = (await request.json().catch(() => null)) as
-    | FaceIdentifyRequest
-    | null;
+  const formData = await request.formData().catch(() => null);
 
-  if (!payload || typeof payload.image !== "string" || !payload.image) {
+  if (!formData) {
     return Response.json(
       {
-        code: "INVALID_IDENTIFY_PAYLOAD",
-        message: "Identify yêu cầu một ảnh Base64 trong trường image.",
+        code: "INVALID_IDENTIFICATION_FORM",
+        message: "Identification yêu cầu multipart/form-data.",
       },
       { status: 400 }
     );
   }
 
+  const image = getUploadedImage(formData);
+
+  if (!image || image.size === 0) {
+    return Response.json(
+      {
+        code: "INVALID_IDENTIFICATION_IMAGE",
+        message: "Identification yêu cầu một file ảnh trong field image.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const backendFormData = new FormData();
+  backendFormData.append(
+    "image",
+    image,
+    image.name || "face-verify.jpg"
+  );
+
   return proxyAiBackend({
     method: "POST",
-    path: process.env.AI_IDENTIFY_PATH ?? "/identify",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    path: AI_BACKEND_ENDPOINTS.identification,
+    body: backendFormData,
   });
 }
