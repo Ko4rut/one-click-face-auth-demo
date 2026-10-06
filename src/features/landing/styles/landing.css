@@ -20,12 +20,53 @@
 .background-grid {
   position: absolute;
   inset: 0;
-  opacity: 0.38;
+  opacity: 0.46;
   background-image:
     linear-gradient(var(--color-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
   background-size: 82px 82px;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.5), transparent 68%);
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0,0,0,.62) 0%,
+    rgba(0,0,0,.42) 34%,
+    rgba(0,0,0,.08) 78%,
+    transparent 100%
+  );
+  animation: background-grid-breathe 9s ease-in-out infinite;
+}
+
+.background-network {
+  position: absolute;
+  top: 78px;
+  left: 0;
+  width: 100%;
+  height: 980px;
+  overflow: visible;
+  opacity: 0.62;
+}
+
+.background-network-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 4 18;
+  will-change: stroke-dashoffset;
+}
+
+.background-network-line-one {
+  stroke: color-mix(in srgb, var(--color-sage) 46%, transparent);
+  animation: background-flow 15s linear infinite;
+}
+
+.background-network-line-two {
+  stroke: color-mix(in srgb, var(--color-burgundy) 27%, transparent);
+  animation: background-flow-reverse 19s linear infinite;
+}
+
+.background-network-line-three {
+  stroke: color-mix(in srgb, var(--color-khaki) 56%, transparent);
+  animation: background-flow 23s linear infinite;
 }
 
 .background-orb {
@@ -92,21 +133,39 @@
   inset: 42%;
 }
 
+.background-target-sweep {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 50%;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-sage) 72%, transparent),
+    transparent
+  );
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-sage) 30%, transparent);
+  animation: background-target-sweep 4.8s ease-in-out infinite;
+}
+
 .background-face-target-one {
-  width: 460px;
-  height: 460px;
-  right: 2%;
-  top: 340px;
-  animation: background-orbit 36s linear infinite;
+  width: 510px;
+  height: 510px;
+  right: -1%;
+  top: 300px;
+  opacity: 0.62;
+  animation: background-orbit 34s linear infinite;
 }
 
 .background-face-target-two {
-  width: 300px;
-  height: 300px;
-  left: 4%;
-  top: 1220px;
-  opacity: 0.28;
-  animation: background-orbit-reverse 42s linear infinite;
+  width: 330px;
+  height: 330px;
+  left: 3%;
+  top: 1190px;
+  opacity: 0.36;
+  animation: background-orbit-reverse 40s linear infinite;
 }
 
 .background-dot {
@@ -125,22 +184,43 @@
 .background-dot-three { right: 17%; top: 890px; animation-delay: -4.5s; }
 .background-dot-four { left: 21%; top: 1510px; animation-delay: -6s; }
 .background-dot-five { right: 9%; top: 1810px; animation-delay: -3.3s; }
+.background-dot-six { right: 32%; top: 430px; animation-delay: -5.2s; }
+.background-dot-seven { left: 46%; top: 970px; animation-delay: -1.2s; }
 
 .background-scan-beam {
   position: absolute;
   top: 0;
   left: -20%;
-  width: 32%;
+  width: 36%;
   height: 100%;
-  opacity: 0.14;
+  opacity: 0.2;
   transform: skewX(-13deg);
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--color-khaki) 40%, transparent),
+    color-mix(in srgb, var(--color-khaki) 48%, transparent),
     transparent
   );
-  animation: background-scan 20s linear infinite;
+  animation: background-scan 17s linear infinite;
+}
+
+.background-scan-line {
+  position: absolute;
+  top: 190px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 4%,
+    color-mix(in srgb, var(--color-sage) 42%, transparent) 22%,
+    color-mix(in srgb, var(--color-khaki) 62%, transparent) 50%,
+    color-mix(in srgb, var(--color-sage) 42%, transparent) 78%,
+    transparent 96%
+  );
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-sage) 20%, transparent);
+  animation: background-vertical-scan 11s ease-in-out infinite;
 }
 
 .site-header {
@@ -1070,6 +1150,24 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes background-grid-breathe {
+  0%, 100% { opacity: .34; transform: translate3d(0, 0, 0); }
+  50% { opacity: .5; transform: translate3d(0, 8px, 0); }
+}
+
+@keyframes background-flow {
+  to { stroke-dashoffset: -220; }
+}
+
+@keyframes background-flow-reverse {
+  to { stroke-dashoffset: 220; }
+}
+
+@keyframes background-target-sweep {
+  0%, 100% { transform: translateY(-96px); opacity: .18; }
+  50% { transform: translateY(96px); opacity: .68; }
+}
+
 @keyframes background-drift-one {
   from { transform: translate3d(0, 0, 0) scale(1); }
   to { transform: translate3d(-90px, 70px, 0) scale(1.12); }
@@ -1099,9 +1197,30 @@
 }
 
 @keyframes background-scan {
-  0% { transform: translateX(-160%) skewX(-13deg); }
-  45%, 55% { opacity: .14; }
-  100% { transform: translateX(440%) skewX(-13deg); }
+  0% { transform: translateX(-160%) skewX(-13deg); opacity: 0; }
+  12% { opacity: .2; }
+  84% { opacity: .2; }
+  100% { transform: translateX(440%) skewX(-13deg); opacity: 0; }
+}
+
+@keyframes background-vertical-scan {
+  0% { transform: translateY(-120px); opacity: 0; }
+  12% { opacity: .16; }
+  48% { opacity: .34; }
+  88% { opacity: .14; }
+  100% { transform: translateY(760px); opacity: 0; }
+}
+
+:root[data-theme="dark"] .background-network {
+  opacity: .74;
+}
+
+:root[data-theme="dark"] .background-grid {
+  opacity: .42;
+}
+
+:root[data-theme="dark"] .background-scan-line {
+  opacity: .22;
 }
 
 :root[data-theme="dark"] .site-header-inner {
@@ -1171,6 +1290,26 @@
 }
 
 @media (max-width: 680px) {
+  .background-network {
+    width: 150%;
+    left: -25%;
+    opacity: .42;
+  }
+
+  .background-face-target-one {
+    width: 360px;
+    height: 360px;
+    right: -150px;
+  }
+
+  .background-face-target-two {
+    opacity: .22;
+  }
+
+  .background-scan-beam {
+    opacity: .12;
+  }
+
   .site-header {
     padding-inline: 14px;
   }
