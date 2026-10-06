@@ -15,6 +15,24 @@ function normalizePath(value: string): string {
   return value.startsWith("/") ? value : `/${value}`;
 }
 
+function buildRequestBody(body: unknown): {
+  headers?: HeadersInit;
+  body?: BodyInit;
+} {
+  if (body === undefined) {
+    return {};
+  }
+
+  if (body instanceof FormData) {
+    return { body };
+  }
+
+  return {
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  };
+}
+
 export async function proxyAiBackend({
   method,
   path,
@@ -35,12 +53,12 @@ export async function proxyAiBackend({
   }
 
   const url = `${normalizeBaseUrl(baseUrl)}${normalizePath(path)}`;
+  const requestBody = buildRequestBody(body);
 
   try {
     const response = await fetch(url, {
       method,
-      headers,
-      body,
+      ...requestBody,
       cache: "no-store",
     });
 
