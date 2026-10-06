@@ -4,11 +4,16 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaceGateLogo } from "@/components/brand/FaceGateLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { enrollFace, identifyFace } from "@/service/face-auth/face-auth.service";
+import { stripImageDataUrlPrefix } from "@/service/face-auth/image-base64";
+import { ApiRequestError } from "@/service/http/api-client";
 
 type CaptureMode = "enroll" | "verify";
 type CameraState = "idle" | "requesting" | "ready" | "capturing" | "done" | "error";
+type ApiState = "idle" | "submitting" | "success" | "error";
 
-const ENROLL_TARGET = 8;
+const ENROLL_TARGET = 5;
+const PENDING_ENROLLMENT_USER_KEY = "facegate.pendingEnrollmentUserId";
 
 type FaceCapturePageProps = {
   mode: CaptureMode;
@@ -25,11 +30,21 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
   const captureTimerRef = useRef<number | null>(null);
 
   const [cameraState, setCameraState] = useState<CameraState>("idle");
+  const [apiState, setApiState] = useState<ApiState>("idle");
   const [frames, setFrames] = useState<CapturedFrame[]>([]);
   const [message, setMessage] = useState("");
   const [cameraError, setCameraError] = useState("");
+  const [enrollmentUserId, setEnrollmentUserId] = useState("");
 
   const isEnroll = mode === "enroll";
+
+  useEffect(() => {
+    if (isEnroll) {
+      setEnrollmentUserId(
+        sessionStorage.getItem(PENDING_ENROLLMENT_USER_KEY) ?? ""
+      );
+    }
+  }, [isEnroll]);
 
   const copy = useMemo(
     () =>
@@ -38,7 +53,7 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
             eyebrow: "FACE ENROLLMENT",
             title: "Đăng ký khuôn mặt",
             description:
-              "Giữ khuôn mặt trong khung. Demo sẽ thu nhiều frame từ webcam để chuẩn bị gửi sang AI Backend.",
+              "Giữ khuôn mặt trong khung. Web sẽ thu 5 frame để chuẩn bị gửi sang AI Backend.",
             backHref: "/register",
             backLabel: "Quay lại đăng ký",
           }
@@ -46,7 +61,7 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
             eyebrow: "FACE VERIFICATION",
             title: "Đăng nhập bằng khuôn mặt",
             description:
-              "Nhìn thẳng vào camera. Ở bước tích hợp backend, các frame sẽ được gửi sang API nhận diện 1:N.",
+              "Nhìn thẳng vào camera. Frame sẽ được gửi qua API identify để thực hiện nhận diện 1:N.",
             backHref: "/login",
             backLabel: "Quay lại đăng nhập",
           },
@@ -73,6 +88,7 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
     setCameraError("");
     setMessage("");
     setFrames([]);
+    setApiState("idle");
     setCameraState("requesting");
 
     try {
@@ -130,6 +146,7 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
 
     setFrames([]);
     setMessage("");
+    setApiState("idle");
     setCameraState("capturing");
 
     let count = 0;
@@ -151,13 +168,62 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
         }
         setCameraState("done");
         setMessage(
-          "Đã thu đủ frame cho bản demo. Bước tiếp theo sẽ gửi chúng sang AI Backend để enrollment."
+          "Đã thu đủ 5 frame. Bạn có thể gửi dữ liệu sang API enrollment."
         );
       }
     }, 650);
   };
 
-  const beginVerification = () => {
+  const submitEnrollment = async () => {
+    if (!enrollmentUserId) {
+      setApiState("error");
+      setMessage(
+        "Không tìm thấy user_id từ bước đăng ký. Hãy quay lại /register và thực hiện lại flow."
+      );
+      return;
+    }
+
+    if (frames.length < ENROLL_TARGET) {
+      setApiState("error");
+      setMessage("Chưa thu đủ frame để enrollment.");
+      return;
+    }
+
+    setApiState("submitting");
+    setMessage("Đang gửi 5 frame sang API enrollment...");
+
+    try {
+      const result = await enrollFace({
+        user_id: enrollmentUserId,
+        frames: frames.map((frame) =>
+          stripImageDataUrlPrefix(frame.dataUrl)
+        ),
+      });
+
+      if (result.is_enrolled) {
+        setApiState("success");
+        setMessage(
+          `Đăng ký khuôn mặt thành công cho ${result.user_id}. Accepted ${result.accepted_samples}/${result.required_samples} frame.`
+        );
+        sessionStorage.removeItem(PENDING_ENROLLMENT_USER_KEY);
+        return;
+      }
+
+      setApiState("error");
+      setMessage(
+        `Enrollment chưa hoàn tất: accepted ${result.accepted_samples}/${result.required_samples}, rejected ${result.rejected_samples}.`
+      );
+    } catch (error) {
+      setApiState("error");
+      setMessage(
+        error instanceof ApiRequestError
+          ? error.message
+          : "Có lỗi khi gọi API enrollment."
+      );
+    }
+  };
+
+  const beginVerification = async () => {
     if (isEnroll || cameraState !== "ready") return;
 
     const dataUrl = captureFrame();
@@ -168,18 +234,45 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
 
     setFrames([{ id: Date.now(), dataUrl }]);
     setCameraState("capturing");
+    setApiState("submitting");
+    setMessage("Đang gửi frame sang API identify...");
 
-    window.setTimeout(() => {
+    try {
+      const result = await identifyFace({
+        image: stripImageDataUrlPrefix(dataUrl),
+      });
+
       setCameraState("done");
+
+      if (result.is_valid_frame && result.is_match && result.matched_id) {
+        setApiState("success");
+        setMessage(
+          `Nhận diện thành công: ${result.matched_id} — score ${result.score.toFixed(3)}.`
+        );
+        return;
+      }
+
+      setApiState("error");
       setMessage(
-        "Đã lấy frame xác minh. Hiện chưa kết nối AI Backend nên demo chưa thể khẳng định danh tính."
+        result.is_valid_frame
+          ? `Không tìm thấy danh tính phù hợp — score ${result.score.toFixed(3)}.`
+          : `Frame không hợp lệ: ${result.validation_message}.`
       );
-    }, 950);
+    } catch (error) {
+      setCameraState("done");
+      setApiState("error");
+      setMessage(
+        error instanceof ApiRequestError
+          ? error.message
+          : "Có lỗi khi gọi API identify."
+      );
+    }
   };
 
   const resetCapture = () => {
     setFrames([]);
     setMessage("");
+    setApiState("idle");
     setCameraState(streamRef.current ? "ready" : "idle");
   };
 
@@ -190,6 +283,8 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
       : cameraState === "capturing"
         ? 70
         : 0;
+
+  const isSubmitting = apiState === "submitting";
 
   return (
     <main className="capture-page">
@@ -251,9 +346,9 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
               <path d="m9 12 2 2 4-4" />
             </svg>
             <div>
-              <strong>Camera chỉ mở khi bạn cho phép</strong>
+              <strong>API integration skeleton</strong>
               <span>
-                Bản hiện tại chỉ giữ frame trong bộ nhớ trình duyệt để mô phỏng flow.
+                Browser gọi Next.js /api/face/*; Next.js mới proxy sang AI Backend.
               </span>
             </div>
           </div>
@@ -350,6 +445,7 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
             <div className="capture-thumbnails">
               {frames.map((frame) => (
                 <div className="capture-thumbnail" key={frame.id}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={frame.dataUrl} alt="Captured face frame" />
                   <span>✓</span>
                 </div>
@@ -373,40 +469,59 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
                 <button
                   className="capture-secondary-button"
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => {
                     stopCamera();
                     setCameraState("idle");
                     setFrames([]);
                     setMessage("");
+                    setApiState("idle");
                   }}
                 >
                   Tắt camera
                 </button>
 
                 {isEnroll ? (
-                  <button
-                    className="capture-primary-button"
-                    type="button"
-                    disabled={cameraState === "capturing"}
-                    onClick={
-                      cameraState === "done" ? resetCapture : beginEnrollmentCapture
-                    }
-                  >
-                    {cameraState === "capturing"
-                      ? "Đang thu thập..."
-                      : cameraState === "done"
-                        ? "Thu lại"
+                  cameraState === "done" ? (
+                    <>
+                      <button
+                        className="capture-secondary-button"
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={resetCapture}
+                      >
+                        Thu lại
+                      </button>
+                      <button
+                        className="capture-primary-button"
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={submitEnrollment}
+                      >
+                        {isSubmitting ? "Đang gửi API..." : "Gửi đăng ký khuôn mặt"}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="capture-primary-button"
+                      type="button"
+                      disabled={cameraState === "capturing"}
+                      onClick={beginEnrollmentCapture}
+                    >
+                      {cameraState === "capturing"
+                        ? "Đang thu thập..."
                         : "Bắt đầu thu khuôn mặt"}
-                  </button>
+                    </button>
+                  )
                 ) : (
                   <button
                     className="capture-primary-button"
                     type="button"
-                    disabled={cameraState === "capturing"}
+                    disabled={cameraState === "capturing" || isSubmitting}
                     onClick={cameraState === "done" ? resetCapture : beginVerification}
                   >
-                    {cameraState === "capturing"
-                      ? "Đang nhận diện..."
+                    {isSubmitting
+                      ? "Đang gọi identify..."
                       : cameraState === "done"
                         ? "Thử lại"
                         : "Xác minh khuôn mặt"}
@@ -423,7 +538,10 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
           )}
 
           {message && (
-            <p className="capture-message" role="status">
+            <p
+              className={`capture-message ${apiState === "error" ? "capture-message-error" : ""}`}
+              role="status"
+            >
               {message}
             </p>
           )}

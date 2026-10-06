@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PasswordField } from "./PasswordField";
 
+const PENDING_ENROLLMENT_USER_KEY = "facegate.pendingEnrollmentUserId";
+
 export function RegisterForm() {
   const router = useRouter();
   const [message, setMessage] = useState("");
@@ -12,6 +14,7 @@ export function RegisterForm() {
     event.preventDefault();
 
     const form = new FormData(event.currentTarget);
+    const username = String(form.get("username") ?? "").trim();
     const password = String(form.get("password") ?? "");
     const confirmPassword = String(form.get("confirmPassword") ?? "");
     const consent = form.get("biometricConsent");
@@ -26,6 +29,7 @@ export function RegisterForm() {
       return;
     }
 
+    sessionStorage.setItem(PENDING_ENROLLMENT_USER_KEY, username);
     router.push("/face-enroll");
   };
 
