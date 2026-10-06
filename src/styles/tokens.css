@@ -1,0 +1,18 @@
+:root {
+  --color-burgundy: #7f2020;
+  --color-burgundy-dark: #651919;
+  --color-sage: #869b7e;
+  --color-khaki: #c9caac;
+  --color-ivory: #f6f3eb;
+  --color-ink: #1d2524;
+  --color-ink-soft: #59615f;
+  --color-panel: rgba(255, 255, 255, 0.56);
+  --color-panel-strong: rgba(255, 255, 255, 0.78);
+  --color-line: rgba(55, 63, 59, 0.13);
+  --shadow-soft: 0 20px 60px rgba(70, 55, 43, 0.09);
+  --shadow-card: 0 18px 42px rgba(70, 55, 43, 0.12);
+  --radius-md: 18px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+  --page-width: 1180px;
+}
