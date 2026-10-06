@@ -1,21 +1,10 @@
 import { requestJson } from "@/service/http/api-client";
 import { FACE_AUTH_ENDPOINTS } from "./endpoints";
 import type {
-  FaceEnrollRequest,
-  FaceEnrollResponse,
   FaceHealthResponse,
   FaceIdentifyRequest,
   FaceIdentifyResponse,
 } from "./types";
-
-export function enrollFace(
-  payload: FaceEnrollRequest
-): Promise<FaceEnrollResponse> {
-  return requestJson<FaceEnrollResponse>(FACE_AUTH_ENDPOINTS.enroll, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
 
 export function identifyFace(
   payload: FaceIdentifyRequest

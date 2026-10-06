@@ -19,6 +19,7 @@ export async function POST(request: Request) {
   return proxyAiBackend({
     method: "POST",
     path: process.env.AI_IDENTIFY_PATH ?? "/identify",
-    body: payload,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
 }

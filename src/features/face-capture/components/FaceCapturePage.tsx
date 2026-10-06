@@ -4,8 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaceGateLogo } from "@/components/brand/FaceGateLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { enrollFace, identifyFace } from "@/service/face-auth/face-auth.service";
-import { stripImageDataUrlPrefix } from "@/service/face-auth/image-base64";
+import { identifyFace } from "@/service/face-auth/face-auth.service";
+import { enrollFace } from "@/service/face-auth/enrollment/enrollment.service";
+import {
+  imageDataUrlToBlob,
+  stripImageDataUrlPrefix,
+} from "@/service/face-auth/image-base64";
 import { ApiRequestError } from "@/service/http/api-client";
 
 type CaptureMode = "enroll" | "verify";
@@ -194,9 +198,9 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
 
     try {
       const result = await enrollFace({
-        user_id: enrollmentUserId,
-        frames: frames.map((frame) =>
-          stripImageDataUrlPrefix(frame.dataUrl)
+        userId: enrollmentUserId,
+        images: frames.map((frame) =>
+          imageDataUrlToBlob(frame.dataUrl)
         ),
       });
 

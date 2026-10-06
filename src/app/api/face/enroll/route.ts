@@ -1,34 +1,64 @@
 import { proxyAiBackend } from "@/service/ai-backend/client";
-import type { FaceEnrollRequest } from "@/service/face-auth/types";
+import { AI_BACKEND_ENDPOINTS } from "@/service/ai-backend/endpoints";
+
+function getUploadedImages(formData: FormData): File[] {
+  return formData
+    .getAll("images")
+    .filter((value): value is File => value instanceof File);
+}
 
 export async function POST(request: Request) {
-  const payload = (await request.json().catch(() => null)) as
-    | FaceEnrollRequest
-    | null;
+  const formData = await request.formData().catch(() => null);
 
-  if (
-    !payload ||
-    typeof payload.user_id !== "string" ||
-    !payload.user_id.trim() ||
-    !Array.isArray(payload.frames) ||
-    payload.frames.length === 0 ||
-    payload.frames.some((frame) => typeof frame !== "string" || !frame)
-  ) {
+  if (!formData) {
     return Response.json(
       {
-        code: "INVALID_ENROLL_PAYLOAD",
-        message: "Enrollment yêu cầu user_id và ít nhất một frame Base64.",
+        code: "INVALID_ENROLLMENT_FORM",
+        message: "Enrollment yêu cầu multipart/form-data.",
       },
       { status: 400 }
     );
   }
 
+  const rawUserId = formData.get("user_id");
+  const userId =
+    typeof rawUserId === "string" ? rawUserId.trim() : "";
+  const images = getUploadedImages(formData);
+
+  if (!userId) {
+    return Response.json(
+      {
+        code: "INVALID_ENROLLMENT_USER_ID",
+        message: "user_id không được để trống.",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (images.length === 0) {
+    return Response.json(
+      {
+        code: "INVALID_ENROLLMENT_IMAGES",
+        message: "Enrollment yêu cầu ít nhất một ảnh.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const backendFormData = new FormData();
+  backendFormData.append("user_id", userId);
+
+  images.forEach((image) => {
+    backendFormData.append(
+      "images",
+      image,
+      image.name || "face.jpg"
+    );
+  });
+
   return proxyAiBackend({
     method: "POST",
-    path: process.env.AI_ENROLL_PATH ?? "/enroll",
-    body: {
-      ...payload,
-      user_id: payload.user_id.trim(),
-    },
+    path: AI_BACKEND_ENDPOINTS.enrollment,
+    body: backendFormData,
   });
 }
