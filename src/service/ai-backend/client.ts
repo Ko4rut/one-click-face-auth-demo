@@ -1,9 +1,10 @@
-type ProxyMethod = "GET" | "POST";
+type ProxyMethod = "GET" | "POST" | "DELETE";
 
 type AiBackendProxyOptions = {
   method: ProxyMethod;
   path: string;
-  body?: unknown;
+  body?: BodyInit;
+  headers?: HeadersInit;
 };
 
 function normalizeBaseUrl(value: string): string {
@@ -36,6 +37,7 @@ export async function proxyAiBackend({
   method,
   path,
   body,
+  headers,
 }: AiBackendProxyOptions): Promise<Response> {
   const baseUrl = process.env.AI_API_BASE_URL?.trim();
 
