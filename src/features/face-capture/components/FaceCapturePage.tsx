@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaceGateLogo } from "@/components/brand/FaceGateLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -26,6 +27,7 @@ type CapturedFrame = {
 };
 
 export function FaceCapturePage({ mode }: FaceCapturePageProps) {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const captureTimerRef = useRef<number | null>(null);
@@ -204,9 +206,14 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
       if (result.is_enrolled) {
         setApiState("success");
         setMessage(
-          `Đăng ký khuôn mặt thành công cho ${result.user_id}. Accepted ${result.accepted_samples}/${result.required_samples} frame.`
+          `Đăng ký khuôn mặt thành công cho ${result.user_id}. Đang chuyển về trang đăng nhập...`
         );
         sessionStorage.removeItem(PENDING_ENROLLMENT_USER_KEY);
+
+        window.setTimeout(() => {
+          stopCamera();
+          router.push("/login");
+        }, 1000);
         return;
       }
 
@@ -247,9 +254,18 @@ export function FaceCapturePage({ mode }: FaceCapturePageProps) {
 
       if (result.is_valid_frame && result.is_match && result.matched_id) {
         setApiState("success");
-        setMessage(
-          `Nhận diện thành công: ${result.matched_id} — score ${result.score.toFixed(3)}.`
+        sessionStorage.setItem(
+          "facegate.authenticatedUserId",
+          result.matched_id
         );
+        setMessage(
+          `Nhận diện thành công: ${result.matched_id}. Đang chuyển vào trang xác nhận...`
+        );
+
+        window.setTimeout(() => {
+          stopCamera();
+          router.push("/dashboard");
+        }, 900);
         return;
       }
 
